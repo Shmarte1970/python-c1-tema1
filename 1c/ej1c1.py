@@ -17,6 +17,7 @@ Tu tarea es completar la implementación de las funciones indicadas.
 
 import requests
 
+
 def get_gbfs_feeds():
     """
     Realiza una petición GET a la API de GBFS de Barcelona para obtener
@@ -34,7 +35,19 @@ def get_gbfs_feeds():
     # 2. Verificar que la respuesta sea correcta (código 200)
     # 3. Devolver los datos en formato JSON
     # 4. Manejar posibles errores (conexión, formato, etc.)
-    pass
+
+    try:
+        response = requests.get(base_url)
+
+        # Verificar código de estado
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return None
+
+    except requests.exceptions.RequestException:
+        # Captura errores de conexión, timeout, etc.
+        return None
 
 
 def extract_feeds_info(feeds_data):
@@ -53,7 +66,26 @@ def extract_feeds_info(feeds_data):
     # 2. Extraer la lista de feeds para el idioma inglés (en)
     # 3. Crear y devolver una lista con la información relevante de cada feed
     # 4. Manejar posibles errores en la estructura de los datos
-    pass
+
+    try:
+        # 1. Verificar que no sea None
+        if feeds_data is None:
+            return None
+
+        # 2. Extraer feeds en inglés
+        feeds_list = feeds_data["data"]["en"]["feeds"]
+
+        # 3. Crear lista de diccionarios con name y url
+        result = []
+        for feed in feeds_list:
+            result.append({"name": feed["name"], "url": feed["url"]})
+
+        return result
+
+    except (KeyError, TypeError):
+        # Manejar estructura inválida o tipos incorrectos
+        return None
+
 
 def print_feeds_summary(feeds_info):
     """
@@ -66,21 +98,19 @@ def print_feeds_summary(feeds_info):
         print("Error: No feeds information available")
         return
 
-    # Imprimir título y cantidad de feeds
     print("=" * 50)
     print("Barcelona Bike-Sharing System - GBFS Feeds")
     print("=" * 50)
     print(f"Available Feeds: {len(feeds_info)}")
     print("-" * 50)
 
-    # Imprimir información de cada feed
     for feed in feeds_info:
         print(f"Name: {feed['name']}")
         print(f"URL: {feed['url']}")
         print("-" * 50)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Obtener los datos de los feeds disponibles
     feeds_data = get_gbfs_feeds()
 
