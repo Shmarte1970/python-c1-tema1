@@ -17,12 +17,11 @@ y permiten concentrarse en el análisis de datos en lugar de en los detalles té
 de la comunicación con la API.
 """
 
-import pybikes
-import pandas as pd
-import time
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import matplotlib.pyplot as plt
-import sys
+import pandas as pd
+import pybikes
 
 
 def listar_sistemas_disponibles() -> List[str]:
@@ -34,7 +33,11 @@ def listar_sistemas_disponibles() -> List[str]:
     """
     # Implementa aquí la lógica para obtener y devolver la lista
     # de sistemas disponibles en pybikes
-    pass
+    try:
+        all_data = pybikes.get_all_data()
+        return sorted(name.replace(".json", "") for name in all_data)
+    except Exception:
+        return []
 
 
 def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
@@ -49,7 +52,17 @@ def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
     """
     # Implementa aquí la lógica para buscar y devolver sistemas
     # que coincidan con la ciudad especificada
-    pass
+
+    resultados = []
+    for tag in listar_sistemas_disponibles():
+        try:
+            system = pybikes.get(tag)
+            city = system.meta.get("city", "")
+            if ciudad.lower() in city.lower():
+                resultados.append(tag)
+        except Exception:
+            continue
+    return resultados
 
 
 def obtener_info_sistema(tag: str) -> Dict[str, Any]:
@@ -64,7 +77,16 @@ def obtener_info_sistema(tag: str) -> Dict[str, Any]:
     """
     # Implementa aquí la lógica para obtener y devolver
     # los metadatos del sistema especificado
-    pass
+    try:
+        system = pybikes.get(tag)
+        return {
+            "name": system.meta.get("name", ""),
+            "city": system.meta.get("city", ""),
+            "country": system.meta.get("country", ""),
+            "system": system.meta.get("system", ""),
+        }
+    except Exception:
+        return None
 
 
 def obtener_estaciones(tag: str) -> Optional[List]:
@@ -79,7 +101,12 @@ def obtener_estaciones(tag: str) -> Optional[List]:
     """
     # Implementa aquí la lógica para obtener y devolver
     # la lista de estaciones del sistema especificado
-    pass
+    try:
+        system = pybikes.get(tag)
+        system.update()
+        return system.stations
+    except Exception:
+        return None
 
 
 def crear_dataframe_estaciones(estaciones: List) -> pd.DataFrame:
@@ -95,7 +122,21 @@ def crear_dataframe_estaciones(estaciones: List) -> pd.DataFrame:
     # Implementa aquí la lógica para convertir la lista de estaciones
     # en un DataFrame de pandas con al menos las columnas:
     # nombre, latitud, longitud, bicicletas disponibles, espacios libres
-    pass
+    if not estaciones:
+        return pd.DataFrame()
+
+    data = []
+    for station in estaciones:
+        data.append(
+            {
+                "name": station.name,
+                "latitude": station.latitude,
+                "longitude": station.longitude,
+                "bikes": station.bikes,
+                "free": station.free,
+            }
+        )
+    return pd.DataFrame(data)
 
 
 def visualizar_estaciones(df: pd.DataFrame) -> None:
@@ -107,7 +148,16 @@ def visualizar_estaciones(df: pd.DataFrame) -> None:
     """
     # Implementa aquí la lógica para crear un gráfico de barras que muestre
     # las 10 estaciones con más bicicletas disponibles
-    pass
+    if df.empty:
+        return
+
+    top10 = df.nlargest(10, "bikes")
+    plt.figure(figsize=(12, 6))
+    plt.bar(top10["name"], top10["bikes"])
+    plt.xticks(rotation=45, ha="right")
+    plt.title("Top 10 estaciones con más bicicletas disponibles")
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -144,7 +194,7 @@ if __name__ == "__main__":
 
             # Estadísticas básicas
             print("\nEstadísticas de bicicletas disponibles:")
-            print(df['bikes'].describe())
+            print(df["bikes"].describe())
 
             # Visualización
             print("\nVisualizando estaciones con más bicicletas disponibles...")
@@ -153,4 +203,3 @@ if __name__ == "__main__":
             print("No se pudieron obtener las estaciones.")
     else:
         print("El sistema 'bicing' no está disponible en pybikes.")
-
