@@ -14,6 +14,7 @@ de ipify.org usando el formato JSON, que es más estructurado que el texto plano
 
 import requests
 
+
 def get_user_ip_json():
     """
     Realiza una petición GET a api.ipify.org para obtener la dirección IP pública
@@ -23,39 +24,48 @@ def get_user_ip_json():
         str: La dirección IP si la petición es exitosa
         None: Si ocurre un error en la petición
     """
-    # Completa esta función para:
-    # 1. Realizar una petición GET a la URL https://api.ipify.org?format=json
-    # 2. Verificar si la petición fue exitosa (código 200)
-    # 3. Convertir la respuesta a formato JSON
-    # 4. Extraer y devolver la IP del campo "ip" del objeto JSON
-    # 5. Devolver None si hay algún error
-    pass
+    try:
+        response = requests.get("https://api.ipify.org?format=json")
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("ip")
+        else:
+            return None
+    except Exception:
+        return None
+
 
 def get_response_info():
     """
     Obtiene información adicional sobre la respuesta HTTP al consultar la API.
-    
+
     Returns:
         dict: Diccionario con información de la respuesta (tipo de contenido,
               tiempo de respuesta, tamaño de la respuesta)
         None: Si ocurre un error en la petición
     """
-    # Completa esta función para:
-    # 1. Realizar una petición GET a la URL https://api.ipify.org?format=json
-    # 2. Verificar si la petición fue exitosa (código 200)
-    # 3. Crear y devolver un diccionario con:
-    #    - 'content_type': El tipo de contenido de la respuesta
-    #    - 'elapsed_time': El tiempo que tardó la petición (en milisegundos)
-    #    - 'response_size': El tamaño de la respuesta en bytes
-    # 4. Devolver None si hay algún error
-    pass
+    try:
+        response = requests.get("https://api.ipify.org?format=json")
+        if response.status_code == 200:
+            info = {
+                "content_type": response.headers.get("Content-Type"),
+                "elapsed_time": response.elapsed.total_seconds()
+                * 1000,  # a milisegundos
+                "response_size": len(response.content),
+            }
+            return info
+        else:
+            return None
+    except Exception:
+        return None
+
 
 if __name__ == "__main__":
     # Ejemplo de uso de las funciones
     ip = get_user_ip_json()
     if ip:
         print(f"Tu dirección IP pública es: {ip}")
-        
+
         # Mostrar información adicional de la respuesta
         info = get_response_info()
         if info:
