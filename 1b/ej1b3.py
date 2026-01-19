@@ -19,9 +19,10 @@ Tu objetivo es asegurar que cuando se acceda a una ruta no definida, se devuelva
 error 404 personalizado en formato JSON.
 """
 
-import json
 import datetime
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     """
@@ -48,7 +49,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             time_info = {
                 "timestamp": current_time.timestamp(),
                 "iso_format": current_time.isoformat(),
-                "readable": current_time.strftime("%Y-%m-%d %H:%M:%S")
+                "readable": current_time.strftime("%Y-%m-%d %H:%M:%S"),
             }
 
             self.wfile.write(json.dumps(time_info).encode())
@@ -73,7 +74,22 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             # Nota: Para los nombres de campo también se aceptan variaciones como:
             # - Para el código: "code" o "status"
             # - Para el mensaje: "message", "descripcion" o "detail"
-            pass
+            # --- Manejo de error 404 personalizado en JSON ---
+
+            # 1. Enviar código de estado 404
+            self.send_response(404)
+            # 2. Establecer tipo de contenido como JSON
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+
+            # 3. Construir mensaje de error personalizado
+            error_response = {
+                "code": 404,
+                "message": f"Recurso {self.path} no encontrado",
+            }
+
+            # 4. Enviar respuesta
+            self.wfile.write(json.dumps(error_response).encode())
 
 
 def create_server(host="localhost", port=8000):
@@ -84,6 +100,7 @@ def create_server(host="localhost", port=8000):
     httpd = HTTPServer(server_address, MyHTTPRequestHandler)
     return httpd
 
+
 def run_server(server):
     """
     Inicia el servidor HTTP
@@ -91,6 +108,7 @@ def run_server(server):
     print(f"Servidor iniciado en http://{server.server_name}:{server.server_port}")
     server.serve_forever()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     server = create_server()
     run_server(server)

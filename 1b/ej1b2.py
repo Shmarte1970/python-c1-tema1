@@ -26,6 +26,7 @@ en el cuerpo JSON y usar el campo "description" para proporcionar información d
 
 import requests
 
+
 def request_with_error_handling(url):
     """
     Realiza una petición GET a la URL proporcionada y maneja los diferentes tipos de
@@ -49,7 +50,84 @@ def request_with_error_handling(url):
     # - Redirecciones (códigos 3xx)
     # - Errores del cliente (códigos 4xx)
     # - Errores del servidor (códigos 5xx)
-    pass
+
+    try:
+        # Realizar la petición HTTP
+        response = requests.get(url, allow_redirects=False)
+        status = response.status_code
+
+        # Intentar extraer información JSON
+        try:
+            data = response.json()
+            description = data.get("description")
+            code_in_body = data.get("code")
+        except Exception:
+            description = None
+            code_in_body = None
+
+        # --- Respuestas exitosas (2xx) ---
+        if 200 <= status < 300:
+            return {
+                "success": True,
+                "status_code": status,
+                "is_redirect": False,
+                "message": description or "Request successful",
+            }
+
+        # --- Redirecciones (3xx) ---
+        if 300 <= status < 400:
+            redirect_url = response.headers.get("Location")
+            return {
+                "success": False,
+                "status_code": status,
+                "is_redirect": True,
+                "redirect_url": redirect_url,
+                "message": description or "Redirection",
+            }
+
+        # --- Errores del cliente (4xx) ---
+        if 400 <= status < 500:
+            return {
+                "success": False,
+                "status_code": status,
+                "is_redirect": False,
+                "error_type": "client_error",
+                "message": description or "Client error",
+            }
+
+        # --- Errores del servidor (5xx) ---
+        if 500 <= status < 600:
+            return {
+                "success": False,
+                "status_code": status,
+                "is_redirect": False,
+                "error_type": "server_error",
+                "message": description or "Server error",
+            }
+
+        # Caso raro no contemplado
+        return {
+            "success": False,
+            "status_code": status,
+            "is_redirect": False,
+            "message": "Unexpected response",
+        }
+
+    except requests.exceptions.ConnectionError as e:
+        return {
+            "success": False,
+            "status_code": None,
+            "is_redirect": False,
+            "message": f"connection_error: {e}",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "status_code": None,
+            "is_redirect": False,
+            "message": str(e),
+        }
 
 
 if __name__ == "__main__":
